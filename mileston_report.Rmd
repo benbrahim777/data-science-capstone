@@ -1,0 +1,112 @@
+---
+title: "Data Science Capstone Milestone Report"
+author: Jaehyun Shin
+output: html_document
+---
+
+### Introduction
+
+The purpose of this document is just to display that exploring data and plan about app and algorithm.
+
+Data files named LOCALE.blogs.txt, LOCALE.news.txt and LOCALE.twitter.txt where LOCALE is the each of the four locales en_US, de_DE, ru_RU and fi_FI. The data is from a corpus called HC Corpora (www.corpora.heliohost.org). 
+
+See the readme file at http://www.corpora.heliohost.org/aboutcorpus.html for details on the corpora available.
+
+### Prepare data
+
+1. Download data file
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tm)
+library(RWeka)
+options(mc.cores = 1)
+```
+```{r, cache=TRUE}
+DATA_PATH = './datas'
+SK.download <- function(){
+    if(!file.exists(DATA_PATH)){
+        dir.create(DATA_PATH)
+        localPath <- paste(DATA_PATH, "data.zip", sep = "/")
+        sourceUrl <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
+        download.file(sourceUrl, localPath, method="curl")
+        unzip(localPath, exdir = DATA_PATH)
+    }
+}
+downloadedFilePath = paste(DATA_PATH, "final", sep = "/")
+```
+
+2. Basic data information
+- The en_US.blogs.txt file contains 899288 lines and 37332736 words.
+- The en_US.news.txt file contains 1010242 lines and 34372530 words.
+- The en_US.twitter.txt file contains 2360148 lines and 30373543 words.
+
+3. load data from txt file.
+- I use `en_US` locale and blogs data only on this document (for reducing time)
+```{r, cache=TRUE, warning=FALSE}
+blogsTxtPath <- paste(downloadedFilePath, "en_US", "en_US.blogs.txt", sep = "/")
+blogs <- readLines(blogsTxtPath, 10000)
+```
+
+### Cleaning and exploring data
+Using `tm` package for cleaning some words
+- remove whitespace
+- remove punctuation
+- convert to lowercase
+```{r, cache=TRUE, warning=TRUE, message=FALSE}
+blogs.corpus <- VCorpus(VectorSource(blogs))
+blogs.corpus <- tm_map(blogs.corpus, stripWhitespace)
+blogs.corpus <- tm_map(blogs.corpus, removeNumbers)
+blogs.corpus <- tm_map(blogs.corpus, removePunctuation)
+blogs.corpus <- tm_map(blogs.corpus, content_transformer(tolower))
+```
+
+### Tokenize
+Make 3 types of tokenizer. a word, two words and three words.
+```{r cache=TRUE}
+uniGramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
+biGramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+triGramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+
+uniWord <- TermDocumentMatrix(blogs.corpus, control = list(tokenize = uniGramTokenizer))
+biWords <- TermDocumentMatrix(blogs.corpus, control = list(tokenize = biGramTokenizer))
+triWords <- TermDocumentMatrix(blogs.corpus, control = list(tokenize = triGramTokenizer))
+```
+
+### Frequency of words
+Calucate frequency 30 words
+```{r cache=TRUE}
+calcFrequency <- function(gramTDM){
+  freqTerms <- findFreqTerms(gramTDM, lowfreq = 50)
+  freq <- rowSums(as.matrix(gramTDM[freqTerms,]))
+  freq <- data.frame(word=names(freq), freq=freq)
+  freq[order(-freq$freq), ][1:30, ]
+}
+```
+
+#### 1-Gram
+```{r cache=TRUE}
+unigram <- calcFrequency(uniWord)
+barplot(unigram$freq, names.arg=unigram$word)
+unigram[1:10, ]
+```
+
+#### 2-Gram
+```{r cache=TRUE}
+bigram <- calcFrequency(biWords)
+barplot(bigram$freq, names.arg=bigram$word)
+bigram[1:10, ]
+```
+
+#### 3-Gram
+```{r cache=TRUE}
+trigram <- calcFrequency(triWords)
+barplot(trigram$freq, names.arg=trigram$word)
+trigram[1:10, ]
+```
+
+### Plans for prediction alogrithm and app
+- Text input on application for entering sentence. 
+- When user press spacebar or click submit button, app recommends words on label
+- After user press spacebar app calculate next word. 
+- I will use 'tm' package for processing data.
+- I will make 2-gram, 3-gram or 4-gram dataset. 
+- Application get words from user, it finds next word from n-gram dataset

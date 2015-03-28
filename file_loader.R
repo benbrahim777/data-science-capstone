@@ -2,7 +2,7 @@ DATA_PATH = './datas'
 
 downloadedFilePath = paste(DATA_PATH, "final", sep = "/")
 
-SwiftyKey.download <- function(){
+SK.download <- function(){
     if(!file.exists(DATA_PATH)){
         dir.create(DATA_PATH)
     }
@@ -14,32 +14,32 @@ to
     unzip(localPath, exdir = DATA_PATH)
 }
 
-SwiftyKey.file <- function(locale, channel){
+SK.file <- function(locale, channel){
     filePath <- SwiftKey.filePath(locale, channel)
     if(!file.exists(filePath)){
-        SwiftyKey.download
+        SK.download
     }
 
     file(filePath)
 }
 
-SwiftKey.filePath <- function(locale, channel){
-    paste(downloadedFilePath, locale, SwiftyKey.fileName(locale, channel), sep = "/")
+SK.filePath <- function(locale, channel){
+    paste(downloadedFilePath, locale, SK.fileName(locale, channel), sep = "/")
 }
 
-SwiftyKey.fileName <- function(locale, channel){
-    if(!SwiftyKey.checkChannel(channel) || !SwiftyKey.checkLocale(locale)){
+SK.fileName <- function(locale, channel){
+    if(!SK.checkChannel(channel) || !SK.checkLocale(locale)){
         stop('It is not valid channel or locale')
     }
     paste(locale, channel, "txt", sep = ".")
 }
 
-SwiftyKey.checkLocale <- function(locale){
+SK.checkLocale <- function(locale){
     allowedLocales <- c("de_DE", "en_US", "fi_FI", "ru_RU")
     locale %in% allowedLocales
 }
 
-SwiftyKey.checkChannel <- function(channel){
+SK.checkChannel <- function(channel){
     allowedChannel <- c("blogs", "news", "twitter")
     channel %in% allowedChannel
 }
